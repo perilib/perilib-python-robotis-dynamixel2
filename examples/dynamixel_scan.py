@@ -22,59 +22,70 @@ except ImportError as e:
             print("Unable to find perilib-python installation, cannot continue")
             sys.exit(1)
 
-from perilib.protocol.stream.robotis_dynamixel2 import RobotisDynamixel2Protocol
+import time
+import perilib
+import perilib.protocol.stream.robotis_dynamixel2
 
 class App():
 
     def __init__(self):
-        # set up protocol parser (handles imcoming data and builds outgoing data)
-        self.parser_generator = perilib.protocol.stream.core.ParserGenerator(protocol=RobotisDynamixel2Protocol())
-        self.parser_generator.on_rx_packet = self.on_rx_packet
-        self.parser_generator.on_rx_error = self.on_rx_error
-
-        # set up data stream (detects incoming serial data as well as USB removal)
-        self.data_stream = perilib.hal.serial.SerialStream(parser_generator=self.parser_generator)
-        self.data_stream.on_open_stream = self.on_open_stream
-        self.data_stream.on_close_stream = self.on_close_stream
-        self.data_stream.on_tx_packet = self.on_tx_packet
-
-        # set up device monitor (detects USB insertion/removal)
-        self.devices_monitor = perilib.monitor.serial.SerialMonitor(data_stream=self.data_stream)
-        self.devices_monitor.port_filter = lambda port_info: port_info.vid == 0xFFF1 and port_info.pid == 0xFF48
-        self.devices_monitor.on_connect_device = self.on_connect_device
-        self.devices_monitor.on_disconnect_device = self.on_disconnect_device
-        self.devices_monitor.auto_open = True
-
+        # set up manager (detects USB insertion/removal, creates data stream and parser/generator instances as needed)
+        self.manager = perilib.hal.serial.SerialManager(
+            stream_class=perilib.hal.serial.SerialStream,
+            parser_generator_class=perilib.protocol.stream.robotis_dynamixel2.RobotisDynamixel2ParserGenerator,
+            protocol_class=perilib.protocol.stream.robotis_dynamixel2.RobotisDynamixel2Protocol)
+        self.manager.device_filter = lambda device: device.port_info.vid == 0xFFF1 and device.port_info.pid == 0xFF48
+        self.manager.on_connect_device = self.on_connect_device         # triggered by manager when running
+        self.manager.on_disconnect_device = self.on_disconnect_device   # triggered by manager when running (if stream is closed) or stream (if stream is open)
+        self.manager.on_open_stream = self.on_open_stream               # triggered by stream
+        self.manager.on_close_stream = self.on_close_stream             # triggered by stream
+        self.manager.on_rx_data = self.on_rx_data                       # triggered by stream
+        self.manager.on_tx_data = self.on_tx_data                       # triggered by stream
+        self.manager.on_rx_packet = self.on_rx_packet                   # triggered by parser/generator
+        self.manager.on_tx_packet = self.on_tx_packet                   # triggered by parser/generator
+        self.manager.on_rx_error = self.on_rx_error                     # triggered by parser/generator
+        self.manager.on_packet_timeout = self.on_packet_timeout         # triggered by parser/generator
+        self.manager.auto_open = perilib.hal.serial.SerialManager.AUTO_OPEN_ALL
+        
         # start monitoring for devices
-        self.devices_monitor.start()
+        self.manager.start()
 
-    def on_connect_device(self, port_info):
-        print("[%.03f] CONNECTED: %s" % (time.time(), port_info))
+    def on_connect_device(self, device):
+        print("[%.03f] CONNECTED: %s" % (time.time(), device))
 
-    def on_disconnect_device(self, port_info):
-        print("[%.03f] DISCONNECTED: %s" % (time.time(), port_info))
+    def on_disconnect_device(self, device):
+        print("[%.03f] DISCONNECTED: %s" % (time.time(), device))
 
-    def on_open_stream(self, port_info):
-        print("[%.03f] OPENED: %s" % (time.time(), port_info))
+    def on_open_stream(self, stream):
+        print("[%.03f] OPENED: %s" % (time.time(), stream))
 
-    def on_close_stream(self, port_info):
-        print("[%.03f] CLOSED: %s" % (time.time(), port_info))
+    def on_close_stream(self, stream):
+        print("[%.03f] CLOSED: %s" % (time.time(), stream))
+
+    def on_rx_data(self, data, stream):
+        print("[%.03f] RXD: [%s] via %s" % (time.time(), ' '.join(["%02X" % b for b in data]), stream))
+
+    def on_tx_data(self, data, stream):
+        print("[%.03f] TXD: [%s] via %s" % (time.time(), ' '.join(["%02X" % b for b in data]), stream))
 
     def on_rx_packet(self, packet):
-        print("[%.03f] RX: [%s] (%s)" % (time.time(), ' '.join(["%02X" % b for b in packet.buffer]), packet))
+        print("[%.03f] RXP: %s" % (time.time(), packet))
 
     def on_tx_packet(self, packet):
-        print("[%.03f] TX: [%s] (%s)" % (time.time(), ' '.join(["%02X" % b for b in packet.buffer]), packet))
+        print("[%.03f] TXP: %s" % (time.time(), packet))
 
-    def on_rx_error(self, e, rx_buffer, port_info):
-        print("[%.03f] ERROR: %s (raw data: [%s] from %s)" % (time.time(), e, ' '.join(["%02X" % b for b in rx_buffer]), port_info.device if port_info is not None else "unidentified port"))
+    def on_rx_error(self, e, rx_buffer, parser_generator):
+        print("[%.03f] ERROR: %s (raw data: [%s] via %s)" % (time.time(), e, ' '.join(["%02X" % b for b in rx_buffer]), parser_generator))
 
+    def on_packet_timeout(self, e, rx_buffer, parser_generator):
+        print("[%.03f] TIMEOUT: %s (raw data: [%s] via %s)" % (time.time(), e, ' '.join(["%02X" % b for b in rx_buffer]), parser_generator))
+        
 def main():
     app = App()
     while True:
-        if app.data_stream.is_open:
-            #app.data_stream.send("ble_cmd_system_hello")
-            app.data_stream.send("ping", id=1)
+        for stream_id, stream in app.manager.streams.items():
+            if stream.is_open:
+                stream.parser_generator.send("ping", id=1)
         time.sleep(1)
 
 if __name__ == '__main__':

@@ -99,19 +99,22 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.core.StreamProtocol):
         (crc,) = struct.unpack("<H", buffer[-2:])
         try:
             if instruction == 0x55:
-                self.last_instruction = 0x01 # TODO: REMOVE THIS AND PROPERLY TRACK/CHECK FOR LAST TX INSTRUCTION
-                packet_type = RobotisDynamixel2Packet.TYPE_STATUS
-                packet_definition = RobotisDynamixel2Protocol.instructions[self.last_instruction]
-                packet_name = "stat_%s" % packet_definition["name"]
+                if "last_instruction" in parser_generator.__dict__:
+                    packet_type = RobotisDynamixel2Packet.TYPE_STATUS
+                    packet_definition = RobotisDynamixel2Protocol.instructions[parser_generator.last_instruction]
+                    packet_name = "stat_%s" % packet_definition["name"]
+                else:
+                    raise perilib.core.PerilibProtocolException(
+                            "No known previous instruction, cannot match status packet with correct definition")
             else:
                 packet_type = RobotisDynamixel2Packet.TYPE_INSTRUCTION
                 packet_definition = RobotisDynamixel2Protocol.instructions[instruction]
                 packet_name = "inst_%s" % packet_definition["name"]
-                self.last_instruction = instruction
+                parser_generator.last_instruction = instruction
         except KeyError as e:
             raise perilib.core.PerilibProtocolException(
-                            "Could not find packet definition for instruction 0x%02X"
-                            % (self.last_instruction))
+                    "Could not find packet definition for instruction 0x%02X"
+                    % (parser_generator.last_instruction))
 
         packet_definition["header_args"] = RobotisDynamixel2Protocol.header_args
         packet_definition["footer_args"] = RobotisDynamixel2Protocol.footer_args
@@ -121,7 +124,7 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.core.StreamProtocol):
             "crc": crc
         }
 
-        return RobotisDynamixel2Packet(type=packet_type, name=packet_name, definition=packet_definition, buffer=buffer, metadata=packet_metadata, port_info=port_info)
+        return RobotisDynamixel2Packet(type=packet_type, name=packet_name, definition=packet_definition, buffer=buffer, metadata=packet_metadata, parser_generator=parser_generator)
 
     @classmethod
     def get_packet_from_name_and_args(cls, _packet_name, _parser_generator, **kwargs):
@@ -131,6 +134,9 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.core.StreamProtocol):
             # outgoing instruction
             packet_type = RobotisDynamixel2Packet.TYPE_INSTRUCTION
             instruction_name = parts[0]
+            
+            # prepend instruction slug for consistency
+            _packet_name = "inst_" + instruction_name
         elif len(parts) == 2:
             instruction_name = parts[1]
             if parts[0] == "inst":
@@ -157,7 +163,7 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.core.StreamProtocol):
                     "crc": None
                 }
 
-                return RobotisDynamixel2Packet(type=packet_type, name=_packet_name, definition=packet_definition, payload=kwargs, metadata=packet_metadata, port_info=_port_info)
+                return RobotisDynamixel2Packet(type=packet_type, name=_packet_name, definition=packet_definition, payload=kwargs, metadata=packet_metadata, parser_generator=_parser_generator)
 
         # unable to find correct packet
         raise perilib.core.PerilibProtocolException("Unable to locate packet definition for '%s'" % _packet_name)
@@ -188,3 +194,14 @@ class RobotisDynamixel2Packet(perilib.protocol.stream.core.StreamPacket):
             i = ((crc_accum >> 8) ^ b) & 0xFF
             crc_accum = ((crc_accum << 8) ^ RobotisDynamixel2Protocol.crc_table[i]) & 0xFFFF
         return crc_accum
+
+class RobotisDynamixel2ParserGenerator(perilib.protocol.stream.core.ParserGenerator):
+
+    def __init__(self, protocol_class=RobotisDynamixel2Protocol, stream=None):
+        super().__init__(protocol_class, stream)
+        self.last_instruction = None
+
+    def _on_tx_packet(self, packet):
+        # store instruction byte for reference
+        self.last_instruction = packet.buffer[7]
+        super()._on_tx_packet(packet)
