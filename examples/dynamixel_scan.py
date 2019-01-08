@@ -67,9 +67,7 @@ def main():
     while True:
         for stream_id, stream in app.manager.streams.items():
             if stream.is_open:
-                stream.parser_generator.send("ping", id=1)
-                time.sleep(0.05)
-                stream.parser_generator.send("read", id=1, address=0x0084, length=0x0004)
+                stream.parser_generator.send("ping", id=0xFE)
         time.sleep(1)
 
 if __name__ == '__main__':
