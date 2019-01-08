@@ -68,8 +68,67 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.core.StreamProtocol):
         },
         0x02: { # id = 0x02 (read)
             "name": "read",
+            "outgoing_args": [
+                { "name": "address", "type": "uint16" },
+                { "name": "length", "type": "uint16" }
+            ],
+            "incoming_args": [
+                { "name": "error", "type": "uint8" },
+                { "name": "data", "type": "uint8a-greedy" }
+            ],
+        },
+        0x03: { # id = 0x03 (write)
+            "name": "write",
+            "outgoing_args": [
+                { "name": "address", "type": "uint16" },
+                { "name": "data", "type": "uint8a-greedy" }
+            ],
+            "incoming_args": [
+                { "name": "error", "type": "uint8" }
+            ],
+        },
+        0x04: { # id = 0x04 (reg_write)
+            "name": "reg_write",
+            "outgoing_args": [
+                { "name": "address", "type": "uint16" },
+                { "name": "data", "type": "uint8a-greedy" }
+            ],
+            "incoming_args": [
+                { "name": "error", "type": "uint8" }
+            ],
+        },
+        0x05: { # id = 0x05 (action)
+            "name": "read",
             "outgoing_args": [],
-            "incoming_args": [],
+            "incoming_args": [
+                { "name": "error", "type": "uint8" }
+            ],
+        },
+        0x06: { # id = 0x06 (factory_reset)
+            "name": "factory_reset",
+            "outgoing_args": [
+                { "name": "type", "type": "uint8" }
+            ],
+            "incoming_args": [
+                { "name": "error", "type": "uint8" }
+            ],
+        },
+        0x08: { # id = 0x08 (reboot)
+            "name": "reboot",
+            "outgoing_args": [],
+            "incoming_args": [
+                { "name": "error", "type": "uint8" }
+            ],
+        },
+        0x10: { # id = 0x10 (clear)
+            "name": "reboot",
+            "outgoing_args": [
+                { "name": "type", "type": "uint8" },
+                { "name": "code", "type": "uint32" }
+            ],
+            "incoming_args": [
+                { "name": "error", "type": "uint8" }
+            ],
         },
     }
 
