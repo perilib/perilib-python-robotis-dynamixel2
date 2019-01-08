@@ -73,13 +73,15 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.core.StreamProtocol):
         },
     }
 
-    def test_packet_start(self, buffer, is_tx=False):
+    @classmethod
+    def test_packet_start(cls, buffer, is_tx=False):
         if len(buffer) == 1 and buffer[0] == 0xFF: return perilib.protocol.stream.core.ParserGenerator.STATUS_STARTING
         if len(buffer) == 2 and buffer[1] == 0xFF: return perilib.protocol.stream.core.ParserGenerator.STATUS_STARTING
         if len(buffer) == 3 and buffer[2] == 0xFD: return perilib.protocol.stream.core.ParserGenerator.STATUS_IN_PROGRESS
         return perilib.protocol.stream.core.ParserGenerator.STATUS_IDLE
 
-    def test_packet_complete(self, buffer, is_tx=False):
+    @classmethod
+    def test_packet_complete(cls, buffer, is_tx=False):
         # make sure we have at least up to the packet length field
         if len(buffer) >= 7:
             # check 11-bit "length" field in 4-byte header
@@ -91,7 +93,8 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.core.StreamProtocol):
         # not finished if we made it here
         return perilib.protocol.stream.core.ParserGenerator.STATUS_IN_PROGRESS
 
-    def get_packet_from_buffer(self, buffer, port_info=None, is_tx=False):
+    @classmethod
+    def get_packet_from_buffer(cls, buffer, parser_generator=None, is_tx=False):
         (id, length, instruction) = struct.unpack("<BHB", buffer[4:8])
         (crc,) = struct.unpack("<H", buffer[-2:])
         try:
@@ -120,7 +123,8 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.core.StreamProtocol):
 
         return RobotisDynamixel2Packet(type=packet_type, name=packet_name, definition=packet_definition, buffer=buffer, metadata=packet_metadata, port_info=port_info)
 
-    def get_packet_from_name_and_args(self, _packet_name, _port_info, **kwargs):
+    @classmethod
+    def get_packet_from_name_and_args(cls, _packet_name, _parser_generator, **kwargs):
         # split "ble_cmd_system_hello" into relevant parts
         parts = _packet_name.split('_', maxsplit=1)
         if len(parts) == 1:
