@@ -130,6 +130,44 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.core.StreamProtocol):
                 { "name": "error", "type": "uint8" }
             ],
         },
+        0x82: { # id = 0x82 (sync_read)
+            "name": "sync_read",
+            "outgoing_args": [
+                { "name": "address", "type": "uint16" },
+                { "name": "length", "type": "uint16" },
+                { "name": "id_list", "type": "uint8a-greedy" }
+            ],
+            "incoming_args": [
+                { "name": "error", "type": "uint8" },
+                { "name": "data", "type": "uint8a-greedy" }
+            ],
+        },
+        0x83: { # id = 0x83 (sync_write)
+            "name": "sync_write",
+            "outgoing_args": [
+                { "name": "address", "type": "uint16" },
+                { "name": "length", "type": "uint16" },
+                { "name": "id_data_list", "type": "uint8a-greedy" }
+            ],
+            "incoming_args": [],
+        },
+        0x92: { # id = 0x92 (bulk_read)
+            "name": "bulk_read",
+            "outgoing_args": [
+                { "name": "id_address_length_list", "type": "uint8a-greedy" }
+            ],
+            "incoming_args": [
+                { "name": "error", "type": "uint8" },
+                { "name": "data", "type": "uint8a-greedy" }
+            ],
+        },
+        0x93: { # id = 0x93 (bulk_write)
+            "name": "sync_write",
+            "outgoing_args": [
+                { "name": "id_address_length_data_list", "type": "uint8a-greedy" }
+            ],
+            "incoming_args": [],
+        },
     }
 
     @classmethod
