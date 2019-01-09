@@ -98,7 +98,7 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.core.StreamProtocol):
             ],
         },
         0x05: { # id = 0x05 (action)
-            "name": "read",
+            "name": "action",
             "outgoing_args": [],
             "incoming_args": [
                 { "name": "error", "type": "uint8" }
@@ -121,7 +121,7 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.core.StreamProtocol):
             ],
         },
         0x10: { # id = 0x10 (clear)
-            "name": "reboot",
+            "name": "clear",
             "outgoing_args": [
                 { "name": "type", "type": "uint8" },
                 { "name": "code", "type": "uint32" }
