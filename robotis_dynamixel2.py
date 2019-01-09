@@ -172,10 +172,10 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.core.StreamProtocol):
 
     @classmethod
     def test_packet_start(cls, buffer, is_tx=False):
-        if len(buffer) == 1 and buffer[0] == 0xFF: return perilib.protocol.stream.core.ParserGenerator.STATUS_STARTING
-        if len(buffer) == 2 and buffer[1] == 0xFF: return perilib.protocol.stream.core.ParserGenerator.STATUS_STARTING
-        if len(buffer) == 3 and buffer[2] == 0xFD: return perilib.protocol.stream.core.ParserGenerator.STATUS_IN_PROGRESS
-        return perilib.protocol.stream.core.ParserGenerator.STATUS_IDLE
+        if len(buffer) == 1 and buffer[0] == 0xFF: return perilib.protocol.stream.core.StreamParserGenerator.STATUS_STARTING
+        if len(buffer) == 2 and buffer[1] == 0xFF: return perilib.protocol.stream.core.StreamParserGenerator.STATUS_STARTING
+        if len(buffer) == 3 and buffer[2] == 0xFD: return perilib.protocol.stream.core.StreamParserGenerator.STATUS_IN_PROGRESS
+        return perilib.protocol.stream.core.StreamParserGenerator.STATUS_IDLE
 
     @classmethod
     def test_packet_complete(cls, buffer, is_tx=False):
@@ -185,10 +185,10 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.core.StreamProtocol):
             (packet_length,) = struct.unpack("<H", buffer[5:7])
             if len(buffer) == packet_length + 7:
                 (crc,) = struct.unpack("<H", buffer[-2:])
-                return perilib.protocol.stream.core.ParserGenerator.STATUS_COMPLETE
+                return perilib.protocol.stream.core.StreamParserGenerator.STATUS_COMPLETE
 
         # not finished if we made it here
-        return perilib.protocol.stream.core.ParserGenerator.STATUS_IN_PROGRESS
+        return perilib.protocol.stream.core.StreamParserGenerator.STATUS_IN_PROGRESS
 
     @classmethod
     def get_packet_from_buffer(cls, buffer, parser_generator=None, is_tx=False):
@@ -292,7 +292,7 @@ class RobotisDynamixel2Packet(perilib.protocol.stream.core.StreamPacket):
             crc_accum = ((crc_accum << 8) ^ RobotisDynamixel2Protocol.crc_table[i]) & 0xFFFF
         return crc_accum
 
-class RobotisDynamixel2ParserGenerator(perilib.protocol.stream.core.ParserGenerator):
+class RobotisDynamixel2ParserGenerator(perilib.protocol.stream.core.StreamParserGenerator):
 
     def __init__(self, protocol_class=RobotisDynamixel2Protocol, stream=None):
         super().__init__(protocol_class, stream)
