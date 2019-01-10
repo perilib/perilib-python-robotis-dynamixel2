@@ -207,6 +207,8 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.core.StreamProtocol):
             else:
                 packet_type = RobotisDynamixel2Packet.TYPE_INSTRUCTION
                 packet_definition = RobotisDynamixel2Protocol.instructions[instruction]
+                if len(packet_definition["incoming_args"]) > 0:
+                    packet_definition["response_required"] = "stat_%s" % packet_definition["name"]
                 packet_name = "inst_%s" % packet_definition["name"]
                 parser_generator.last_instruction = instruction
         except KeyError as e:
@@ -254,6 +256,8 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.core.StreamProtocol):
                 packet_definition = RobotisDynamixel2Protocol.instructions[instruction]
                 packet_definition["header_args"] = RobotisDynamixel2Protocol.header_args
                 packet_definition["footer_args"] = RobotisDynamixel2Protocol.footer_args
+                if len(packet_definition["incoming_args"]) > 0:
+                    packet_definition["response_required"] = "stat_%s" % packet_definition["name"]
 
                 packet_metadata = {
                     "id": kwargs["id"],
