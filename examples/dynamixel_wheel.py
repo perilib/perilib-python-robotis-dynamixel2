@@ -23,11 +23,11 @@ class App():
         self.manager.on_close_stream = self.on_close_stream             # triggered by stream
         #self.manager.on_rx_data = self.on_rx_data                       # triggered by stream
         #self.manager.on_tx_data = self.on_tx_data                       # triggered by stream
-        self.manager.on_rx_packet = self.on_rx_packet                   # triggered by parser/generator
-        self.manager.on_tx_packet = self.on_tx_packet                   # triggered by parser/generator
+        #self.manager.on_rx_packet = self.on_rx_packet                   # triggered by parser/generator
+        #self.manager.on_tx_packet = self.on_tx_packet                   # triggered by parser/generator
         self.manager.on_rx_error = self.on_rx_error                     # triggered by parser/generator
-        self.manager.on_incoming_packet_timeout = self.on_incoming_packet_timeout   # triggered by parser/generator
-        self.manager.on_response_packet_timeout = self.on_response_packet_timeout   # triggered by parser/generator
+        #self.manager.on_incoming_packet_timeout = self.on_incoming_packet_timeout   # triggered by parser/generator
+        #self.manager.on_response_packet_timeout = self.on_response_packet_timeout   # triggered by parser/generator
         self.manager.auto_open = perilib.hal.serial.SerialManager.AUTO_OPEN_SINGLE
         
         # start monitoring for devices
