@@ -227,7 +227,7 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.StreamProtocol):
         return RobotisDynamixel2Packet(type=packet_type, name=packet_name, definition=packet_definition, buffer=buffer, metadata=packet_metadata, parser_generator=parser_generator)
 
     @classmethod
-    def get_packet_from_name_and_args(cls, _packet_name, _parser_generator, **kwargs):
+    def get_packet_from_name_and_args(cls, _packet_name, _parser_generator=None, **kwargs):
         # split "ble_cmd_system_hello" into relevant parts
         parts = _packet_name.split('_', maxsplit=1)
         if len(parts) == 1:
@@ -264,7 +264,7 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.StreamProtocol):
                     "instruction": instruction,
                     "crc": None
                 }
-
+                
                 return RobotisDynamixel2Packet(type=packet_type, name=_packet_name, definition=packet_definition, payload=kwargs, metadata=packet_metadata, parser_generator=_parser_generator)
 
         # unable to find correct packet
