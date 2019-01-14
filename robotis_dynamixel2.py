@@ -54,8 +54,8 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.StreamProtocol):
         { "name": "crc", "type": "uint16" }
     ]
 
-    incoming_packet_timeout = 0.05
-    response_packet_timeout = 0.05
+    incoming_packet_timeout = 0.25
+    response_packet_timeout = 0.25
     
     instructions = {
         0x01: { # id = 0x01 (ping)
