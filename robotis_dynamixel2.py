@@ -279,6 +279,29 @@ class RobotisDynamixel2Packet(perilib.protocol.stream.StreamPacket):
     TYPE_ARG_CONTEXT = ["outgoing_args", "incoming_args"]
 
     def prepare_buffer_after_building(self):
+        # perform byte stuffing on payload
+        stuffed_buffer = []
+        stuffing_needed = False
+        seen = [self.metadata["instruction"]]
+        for b in self.buffer:
+            stuffed_buffer.append(b)
+            if b == 0xFF and len(seen) == 0:
+                seen.append(b)
+            elif b == 0xFF and len(seen) == 1:
+                seen.append(b)
+            elif b == 0xFD and len(seen) == 2:
+                # stuff an extra 0xFD byte and reset status
+                stuffing_needed = True
+                stuffed_buffer.append(0xFD)
+                seen = []
+            else:
+                # pattern broken, reset
+                seen = []
+                
+        # replace original buffer with stuffed one
+        if stuffing_needed:
+            self.buffer = bytes(stuffed_buffer)
+
         # build header (SOF, servo ID, length, and instruction data)
         header = struct.pack("<5BHB",
             0xFF, 0xFF, 0xFD, 0x00,
