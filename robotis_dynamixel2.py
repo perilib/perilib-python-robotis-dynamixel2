@@ -195,6 +195,37 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.StreamProtocol):
     def get_packet_from_buffer(cls, buffer, parser_generator=None, is_tx=False):
         (id, length, instruction) = struct.unpack("<BHB", buffer[4:8])
         (crc,) = struct.unpack("<H", buffer[-2:])
+        
+        # remove byte stuffing from instruction/payload, if present
+        unstuffed_buffer = []
+        unstuffing_needed = False
+        seen = []
+        for b in buffer[8:-2]:
+            unstuff_this_byte = False
+            if b == 0xFF and len(seen) == 0:
+                seen.append(b)
+            elif b == 0xFF and len(seen) == 1:
+                seen.append(b)
+            elif b == 0xFD and len(seen) == 2:
+                # stuff an extra 0xFD byte and reset status
+                unstuffing_needed = True
+                unstuff_this_byte = True
+                seen = []
+            else:
+                # pattern broken, reset
+                seen = []
+                
+            if not unstuff_this_byte:
+                unstuffed_buffer.append(b)
+                
+        # add the CRC field at the end (not checked for stuffing)
+        for b in buffer[-2:]:
+            unstuffed_buffer.append(b)
+                
+        # replace original buffer with unstuffed one
+        if unstuffing_needed:
+            buffer = bytes(unstuffed_buffer)
+        
         try:
             if instruction == 0x55:
                 if "last_instruction" in parser_generator.__dict__:
