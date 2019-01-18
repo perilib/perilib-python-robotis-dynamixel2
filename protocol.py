@@ -1,5 +1,5 @@
-import perilib
 import struct
+import perilib
 
 class RobotisDynamixel2Protocol(perilib.protocol.stream.StreamProtocol):
 
