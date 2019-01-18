@@ -11,8 +11,12 @@ import perilib.protocol.stream.robotis_dynamixel2
 class App():
 
     def __init__(self):
+        # device instance (assigned to SerialDevice derived class when stream opens)
+        self.dxl = None
+        
         # set up manager (detects USB insertion/removal, creates data stream and parser/generator instances as needed)
         self.manager = perilib.hal.serial.SerialManager(
+            device_class=perilib.protocol.stream.robotis_dynamixel2.RobotisDynamixel2Device,
             stream_class=perilib.hal.serial.SerialStream,
             parser_generator_class=perilib.protocol.stream.robotis_dynamixel2.RobotisDynamixel2ParserGenerator,
             protocol_class=perilib.protocol.stream.robotis_dynamixel2.RobotisDynamixel2Protocol)
@@ -42,8 +46,14 @@ class App():
     def on_open_stream(self, stream):
         print("[%.03f] OPENED: %s" % (time.time(), stream))
 
+        # store Dynamixel bus device and attach relevant stream management functions to it
+        # (NOTE: this behavior is specific to the RobotisDynamixel2Device class)
+        self.dxl = stream.device
+        self.dxl.attach_stream(stream)
+
     def on_close_stream(self, stream):
         print("[%.03f] CLOSED: %s" % (time.time(), stream))
+        self.dxl = None
 
     def on_rx_data(self, data, stream):
         print("[%.03f] RXD: [%s] via %s" % (time.time(), ' '.join(["%02X" % b for b in data]), stream))
@@ -69,10 +79,27 @@ class App():
 def main():
     app = App()
     while True:
-        for stream_id, stream in app.manager.streams.items():
-            if stream.is_open:
-                stream.parser_generator.send("ping", id=0xFE)
-        time.sleep(1)
+        # wait for the USB serial device to connect
+        if app.dxl is not None:
+            if not app.dxl.is_scanned:
+                # query servos on the bus
+                print("Dynamixel servo bus connected, scanning for servos...")
+                app.dxl.scan()
+                
+                # show list of attached servos
+                print("Found %d servo(s)" % len(app.dxl.servos))
+                [print(" - %s" % servo) for id, servo in app.dxl.servos.items()]
+                
+                # read control tables for each
+                print("Reading control tables for attached servos")
+                for id, servo in app.dxl.servos.items():
+                    servo.read_control_table()
+                    print("Servo #%d" % id)
+                    print("  - operating_mode: %d" % servo.control_table.operating_mode)
+                    print("  - present_position: %d" % servo.control_table.present_position)
+                    print("  - present_velocity: %d" % servo.control_table.present_velocity)
+                    
+        time.sleep(0.05)
 
 if __name__ == '__main__':
     main()
