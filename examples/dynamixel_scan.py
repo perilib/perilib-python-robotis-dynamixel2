@@ -102,4 +102,8 @@ def main():
         time.sleep(0.05)
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("Ctrl+C detected, terminating script")
+        sys.exit(0)
