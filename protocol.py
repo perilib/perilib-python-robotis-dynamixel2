@@ -259,25 +259,19 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.StreamProtocol):
 
     @classmethod
     def get_packet_from_name_and_args(cls, _packet_name, _parser_generator=None, **kwargs):
+        # prepend instruction slug if no slug present
+        if len(_packet_name) < 6 or _packet_name[0:5] not in ["inst_", "stat_"]:
+            _packet_name = "inst_" + _packet_name
+            
         # split "ble_cmd_system_hello" into relevant parts
         parts = _packet_name.split('_', maxsplit=1)
-        if len(parts) == 1:
+        instruction_name = parts[1]
+        if parts[0] == "inst":
             # outgoing instruction
             packet_type = RobotisDynamixel2Packet.TYPE_INSTRUCTION
-            instruction_name = parts[0]
-            
-            # prepend instruction slug for consistency
-            _packet_name = "inst_" + instruction_name
-        elif len(parts) == 2:
-            instruction_name = parts[1]
-            if parts[0] == "inst":
-                # outgoing instruction
-                packet_type = RobotisDynamixel2Packet.TYPE_INSTRUCTION
-            elif parts[0] == "stat":
-                # incoming status packet
-                packet_type = RobotisDynamixel2Packet.TYPE_STATUS
-        else:
-            raise perilib.PerilibProtocolException("Invalid packet name '%s' specified" % _packet_name)
+        elif parts[0] == "stat":
+            # incoming status packet
+            packet_type = RobotisDynamixel2Packet.TYPE_STATUS
 
         # find the entry in the protocol definition table
         for instruction in RobotisDynamixel2Protocol.instructions:
