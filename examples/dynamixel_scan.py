@@ -33,9 +33,6 @@ class App():
         #self.manager.on_incoming_packet_timeout = self.on_incoming_packet_timeout   # triggered by parser/generator
         #self.manager.on_response_packet_timeout = self.on_response_packet_timeout   # triggered by parser/generator
         self.manager.auto_open = perilib.hal.serial.SerialManager.AUTO_OPEN_SINGLE
-        
-        # start monitoring for devices
-        self.manager.start()
 
     def on_connect_device(self, device):
         print("[%.03f] CONNECTED: %s" % (time.time(), device))
@@ -78,7 +75,10 @@ class App():
         
 def main():
     app = App()
+    last_tick = 0
     while True:
+        app.manager.process()
+
         # wait for the USB serial device to connect
         if app.dxl is not None:
             if not app.dxl.is_scanned:
@@ -99,7 +99,8 @@ def main():
                     print("  - present_position: %d" % servo.control_table.present_position)
                     print("  - present_velocity: %d" % servo.control_table.present_velocity)
                     
-        time.sleep(0.05)
+        # tiny delay prevents awful CPU usage
+        time.sleep(0.001)
 
 if __name__ == '__main__':
     try:

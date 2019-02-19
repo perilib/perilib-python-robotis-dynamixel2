@@ -29,9 +29,6 @@ class App():
         #self.manager.on_incoming_packet_timeout = self.on_incoming_packet_timeout   # triggered by parser/generator
         #self.manager.on_response_packet_timeout = self.on_response_packet_timeout   # triggered by parser/generator
         self.manager.auto_open = perilib.hal.serial.SerialManager.AUTO_OPEN_SINGLE
-        
-        # start monitoring for devices
-        self.manager.start()
 
     def on_connect_device(self, device):
         print("[%.03f] CONNECTED: %s" % (time.time(), device))
@@ -69,7 +66,9 @@ class App():
 def main():
     app = App()
     mode = None
+    last_tick = 0
     while True:
+        app.manager.process()
         for stream_id, stream in app.manager.streams.items():
             if stream.is_open:
                 if mode != 1:
@@ -90,7 +89,9 @@ def main():
                 time.sleep(0.5)
                 stream.parser_generator.send("write", id=1, address=0x0068, data=[0x00, 0x00, 0x00, 0x00])
                 time.sleep(1)
-        time.sleep(1)
+
+        # tiny delay prevents awful CPU usage
+        time.sleep(0.001)
 
 if __name__ == '__main__':
     try:
