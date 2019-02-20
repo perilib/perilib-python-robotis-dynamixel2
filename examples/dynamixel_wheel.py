@@ -11,8 +11,12 @@ import perilib.protocol.stream.robotis_dynamixel2
 class App():
 
     def __init__(self):
+        # device instance (assigned to SerialDevice derived class when stream opens)
+        self.dxl = None
+        
         # set up manager (detects USB insertion/removal, creates data stream and parser/generator instances as needed)
         self.manager = perilib.hal.serial.SerialManager(
+            device_class=perilib.protocol.stream.robotis_dynamixel2.RobotisDynamixel2Device,
             stream_class=perilib.hal.serial.SerialStream,
             parser_generator_class=perilib.protocol.stream.robotis_dynamixel2.RobotisDynamixel2ParserGenerator,
             protocol_class=perilib.protocol.stream.robotis_dynamixel2.RobotisDynamixel2Protocol)
@@ -39,8 +43,14 @@ class App():
     def on_open_stream(self, stream):
         print("[%.03f] OPENED: %s" % (time.time(), stream))
 
+        # store Dynamixel bus device and attach relevant stream management functions to it
+        # (NOTE: this behavior is specific to the RobotisDynamixel2Device class)
+        self.dxl = stream.device
+        self.dxl.attach_stream(stream)
+
     def on_close_stream(self, stream):
         print("[%.03f] CLOSED: %s" % (time.time(), stream))
+        self.dxl = None
 
     def on_rx_data(self, data, stream):
         print("[%.03f] RXD: [%s] via %s" % (time.time(), ' '.join(["%02X" % b for b in data]), stream))
@@ -65,30 +75,50 @@ class App():
         
 def main():
     app = App()
-    mode = None
     last_tick = 0
+    state = 0
     while True:
+        # process device manager and all subs
         app.manager.process()
-        for stream_id, stream in app.manager.streams.items():
-            if stream.is_open:
-                if mode != 1:
-                    stream.parser_generator.send("write", id=1, address=0x0040, data=[0x00])
-                    time.sleep(0.05)
-                    stream.parser_generator.send("write", id=1, address=0x000B, data=[0x01]) # 0x03 for joint mode
-                    time.sleep(0.05)
-                    stream.parser_generator.send("write", id=1, address=0x006C, data=[0x00, 0x00, 0x00, 0x00])
-                    time.sleep(0.05)
-                    stream.parser_generator.send("write", id=1, address=0x0040, data=[0x01])
-                    time.sleep(0.05)
-                    mode = 1
-                stream.parser_generator.send("write", id=1, address=0x0068, data=[0x0A, 0x00, 0x00, 0x00])
-                time.sleep(0.5)
-                stream.parser_generator.send("write", id=1, address=0x0068, data=[0x00, 0x00, 0x00, 0x00])
-                time.sleep(0.5)
-                stream.parser_generator.send("write", id=1, address=0x0068, data=[0xF6, 0xFF, 0xFF, 0xFF])
-                time.sleep(0.5)
-                stream.parser_generator.send("write", id=1, address=0x0068, data=[0x00, 0x00, 0x00, 0x00])
-                time.sleep(1)
+
+        # wait for the USB serial device to connect
+        if app.dxl is not None:
+            if not app.dxl.is_scanned:
+                # query servos on the bus
+                print("Dynamixel servo bus connected, scanning for servos...")
+                app.dxl.scan()
+                
+                # show list of attached servos
+                print("Found %d servo(s)" % len(app.dxl.servos))
+                [print(" - %s" % servo) for id, servo in app.dxl.servos.items()]
+
+                # set server #1 to wheel mode
+                app.dxl.servos[1].update_value("torque_enable", 0)
+                app.dxl.servos[1].update_value("operating_mode", 1)
+                app.dxl.servos[1].update_value("goal_velocity", 0)
+                app.dxl.servos[1].update_value("torque_enable", 0)
+                
+            elif time.time() - last_tick > 1:
+                last_tick = time.time()
+
+                # set wheel velocity based on state
+                if state == 0:
+                    # slow rotate forward
+                    app.dxl.servos[1].update_value("goal_velocity", 10)
+                elif state == 1:
+                    # stop rotation
+                    app.dxl.servos[1].update_value("goal_velocity", 0)
+                elif state == 2:
+                    # slow rotate backward
+                    app.dxl.servos[1].update_value("goal_velocity", -10)
+                elif state == 3:
+                    # stop rotation
+                    app.dxl.servos[1].update_value("goal_velocity", 0)
+                
+                # advance state and wrap if needed
+                state += 1
+                if state > 3:
+                    state = 0
 
         # tiny delay prevents awful CPU usage
         time.sleep(0.001)

@@ -77,6 +77,7 @@ def main():
     app = App()
     last_tick = 0
     while True:
+        # process device manager and all subs
         app.manager.process()
 
         # wait for the USB serial device to connect
