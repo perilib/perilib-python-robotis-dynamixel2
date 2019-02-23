@@ -83,5 +83,10 @@ class Servo():
         field = self.control_table.get_field_info(field_name)
         data = perilib.protocol.Protocol.pack_values({field_name: value}, [field])
         packet = self.device.stream.parser_generator.send_and_wait("inst_write", id=self.id, address=field["address"], data=data)
+        
+        # update local control table data with new value if successful
+        if packet is not None and packet is not False and packet.payload["error"] == 0:
+            self.control_table._data[field_name] = value
+            
         return packet
         
