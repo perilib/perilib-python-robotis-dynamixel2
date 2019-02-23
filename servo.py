@@ -79,10 +79,11 @@ class Servo():
             self.control_table.populate_data_from_buffer(packet.payload["data"])
         return packet
         
-    def update_value(self, field_name, value):
+    def update_value(self, field_name, value, broadcast=False):
         field = self.control_table.get_field_info(field_name)
         data = perilib.protocol.Protocol.pack_values({field_name: value}, [field])
-        packet = self.device.stream.parser_generator.send_and_wait("inst_write", id=self.id, address=field["address"], data=data)
+        use_id = self.id if not broadcast else 0xFE
+        packet = self.device.stream.parser_generator.send_and_wait("inst_write", id=use_id, address=field["address"], data=data)
         
         # update local control table data with new value if successful
         if packet is not None and packet is not False and packet.payload["error"] == 0:

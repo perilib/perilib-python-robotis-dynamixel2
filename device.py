@@ -21,13 +21,19 @@ class RobotisDynamixel2Device(perilib.hal.serial.SerialDevice):
                         model_number=packet["model_number"],
                         firmware_version=packet["firmware_version"],
                         device=self)
+
+    def broadcast_packet(self, _packet_name, **kwargs):
+        return self.stream.parser.send_packet(_packet_name, id=0xFE, **kwargs)
         
+    def wait_packet(self, _packet_name=None):
+        return self.stream.parser.wait_packet(_packet_name)
+       
     def scan(self):
-        # send ping instruction to broadcast id (0xFE)
-        self.stream.parser_generator.send_packet("inst_ping", id=0xFE)
+        # send ping instruction to entire bus
+        self.broadcast_packet("inst_ping")
         
         # wait for ping status replies until we time out
-        while self.stream.parser_generator.wait_packet("stat_ping") is not None: pass
+        while self.wait_packet("stat_ping") is not None: pass
         
         # mark as scanned and return servo count
         self.is_scanned = True
