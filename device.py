@@ -23,10 +23,10 @@ class RobotisDynamixel2Device(perilib.hal.serial.SerialDevice):
                         device=self)
 
     def broadcast_packet(self, _packet_name, **kwargs):
-        return self.stream.parser.send_packet(_packet_name, id=0xFE, **kwargs)
+        return self.stream.parser_generator.send_packet(_packet_name, id=0xFE, **kwargs)
         
     def wait_packet(self, _packet_name=None):
-        return self.stream.parser.wait_packet(_packet_name)
+        return self.stream.parser_generator.wait_packet(_packet_name)
        
     def scan(self):
         # send ping instruction to entire bus
