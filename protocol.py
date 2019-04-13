@@ -1,7 +1,7 @@
 import struct
 import perilib
 
-class RobotisDynamixel2Protocol(perilib.protocol.stream.StreamProtocol):
+class RobotisDynamixel2Protocol(perilib.StreamProtocol):
 
     # http://emanual.robotis.com/docs/en/dxl/protocol2/
 
@@ -173,10 +173,10 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.StreamProtocol):
 
     @classmethod
     def test_packet_start(cls, buffer, is_tx=False):
-        if len(buffer) == 1 and buffer[0] == 0xFF: return perilib.protocol.stream.StreamParserGenerator.STATUS_STARTING
-        if len(buffer) == 2 and buffer[1] == 0xFF: return perilib.protocol.stream.StreamParserGenerator.STATUS_STARTING
-        if len(buffer) == 3 and buffer[2] == 0xFD: return perilib.protocol.stream.StreamParserGenerator.STATUS_IN_PROGRESS
-        return perilib.protocol.stream.StreamParserGenerator.STATUS_IDLE
+        if len(buffer) == 1 and buffer[0] == 0xFF: return perilib.ParseStatus.STARTING
+        if len(buffer) == 2 and buffer[1] == 0xFF: return perilib.ParseStatus.STARTING
+        if len(buffer) == 3 and buffer[2] == 0xFD: return perilib.ParseStatus.IN_PROGRESS
+        return perilib.ParseStatus.IDLE
 
     @classmethod
     def test_packet_complete(cls, buffer, is_tx=False):
@@ -186,10 +186,10 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.StreamProtocol):
             (packet_length,) = struct.unpack("<H", buffer[5:7])
             if len(buffer) == packet_length + 7:
                 (crc,) = struct.unpack("<H", buffer[-2:])
-                return perilib.protocol.stream.StreamParserGenerator.STATUS_COMPLETE
+                return perilib.ParseStatus.COMPLETE
 
         # not finished if we made it here
-        return perilib.protocol.stream.StreamParserGenerator.STATUS_IN_PROGRESS
+        return perilib.ParseStatus.IN_PROGRESS
 
     @classmethod
     def get_packet_from_buffer(cls, buffer, parser_generator=None, is_tx=False):
@@ -295,7 +295,7 @@ class RobotisDynamixel2Protocol(perilib.protocol.stream.StreamProtocol):
         # unable to find correct packet
         raise perilib.PerilibProtocolException("Unable to locate packet definition for '%s'" % _packet_name)
 
-class RobotisDynamixel2Packet(perilib.protocol.stream.StreamPacket):
+class RobotisDynamixel2Packet(perilib.StreamPacket):
 
     TYPE_INSTRUCTION = 0
     TYPE_STATUS = 1
@@ -345,7 +345,7 @@ class RobotisDynamixel2Packet(perilib.protocol.stream.StreamPacket):
             crc_accum = ((crc_accum << 8) ^ RobotisDynamixel2Protocol.crc_table[i]) & 0xFFFF
         return crc_accum
 
-class RobotisDynamixel2ParserGenerator(perilib.protocol.stream.StreamParserGenerator):
+class RobotisDynamixel2ParserGenerator(perilib.StreamParserGenerator):
 
     def __init__(self, protocol_class=RobotisDynamixel2Protocol, stream=None):
         super().__init__(protocol_class, stream)
