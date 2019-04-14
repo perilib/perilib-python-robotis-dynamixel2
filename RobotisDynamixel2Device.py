@@ -1,6 +1,6 @@
 import perilib
 
-from .servo import *
+from .RobotisDynamixel2Servo import *
 
 class RobotisDynamixel2Device(perilib.StreamDevice):
     

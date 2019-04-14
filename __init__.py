@@ -8,7 +8,9 @@ underlying protocol directly.
 """
 
 # .py files
-from .protocol import *
-from .control_table import *
-from .servo import *
-from .device import *
+from .RobotisDynamixel2Device import *
+from .RobotisDynamixel2Protocol import *
+from .RobotisDynamixel2ParserGenerator import *
+from .RobotisDynamixel2Packet import *
+from .RobotisDynamixel2Servo import *
+from .RobotisDynamixel2ControlTable import *

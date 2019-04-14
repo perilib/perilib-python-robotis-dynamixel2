@@ -1,8 +1,8 @@
 import perilib
 
-from .control_table import *
+from .RobotisDynamixel2ControlTable import *
 
-class Servo():
+class RobotisDynamixel2Servo():
     
     models = {
         12:     { "name": "AX-12A" },
