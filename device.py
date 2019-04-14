@@ -2,7 +2,7 @@ import perilib
 
 from .servo import *
 
-class RobotisDynamixel2Device(perilib.hal.serial.SerialDevice):
+class RobotisDynamixel2Device(perilib.StreamDevice):
     
     def __init__(self, id, port):
         super().__init__(id, port)

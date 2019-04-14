@@ -11,16 +11,16 @@ import perilib.robotis_dynamixel2
 class App():
 
     def __init__(self):
-        # device instance (assigned to SerialDevice derived class when stream opens)
+        # device instance (assigned to StreamDevice derived class when stream opens)
         self.dxl = None
         
         # set up manager (detects USB insertion/removal, creates data stream and parser/generator instances as needed)
-        self.manager = perilib.hal.serial.UartManager(
+        self.manager = perilib.hal.UartManager(
             device_class=perilib.robotis_dynamixel2.RobotisDynamixel2Device,
-            stream_class=perilib.hal.serial.UartStream,
+            stream_class=perilib.hal.UartStream,
             parser_generator_class=perilib.robotis_dynamixel2.RobotisDynamixel2ParserGenerator,
             protocol_class=perilib.robotis_dynamixel2.RobotisDynamixel2Protocol)
-        self.manager.device_filter = lambda device: device.port_info.vid == 0xFFF1 and device.port_info.pid == 0xFF48
+        self.manager.device_filter = lambda device: device.stream.port_info.vid == 0xFFF1 and device.stream.port_info.pid == 0xFF48
         self.manager.on_connect_device = self.on_connect_device         # triggered by manager when running
         self.manager.on_disconnect_device = self.on_disconnect_device   # triggered by manager when running (if stream is closed) or stream (if stream is open)
         self.manager.on_open_stream = self.on_open_stream               # triggered by stream
@@ -32,7 +32,7 @@ class App():
         self.manager.on_rx_error = self.on_rx_error                     # triggered by parser/generator
         #self.manager.on_incoming_packet_timeout = self.on_incoming_packet_timeout   # triggered by parser/generator
         #self.manager.on_response_packet_timeout = self.on_response_packet_timeout   # triggered by parser/generator
-        self.manager.auto_open = perilib.hal.serial.UartManager.AUTO_OPEN_SINGLE
+        self.manager.auto_open = perilib.hal.UartManager.AUTO_OPEN_SINGLE
 
     def on_connect_device(self, device):
         print("[%.03f] CONNECTED: %s" % (time.time(), device))
