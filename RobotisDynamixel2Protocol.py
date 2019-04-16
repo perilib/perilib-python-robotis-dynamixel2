@@ -174,21 +174,20 @@ class RobotisDynamixel2Protocol(perilib.StreamProtocol):
     }
 
     @classmethod
-    def test_packet_start(cls, buffer, new_byte, is_tx=False):
-        if len(buffer) == 0 and new_byte == 0xFF: return perilib.ParseStatus.STARTING
-        if len(buffer) == 1 and new_byte == 0xFF: return perilib.ParseStatus.STARTING
-        if len(buffer) == 2 and new_byte == 0xFD: return perilib.ParseStatus.IN_PROGRESS
+    def test_packet_start(cls, buffer, is_tx=False):
+        if len(buffer) == 1 and buffer[0] == 0xFF: return perilib.ParseStatus.STARTING
+        if len(buffer) == 2 and buffer[1] == 0xFF: return perilib.ParseStatus.STARTING
+        if len(buffer) == 3 and buffer[2] == 0xFD: return perilib.ParseStatus.IN_PROGRESS
         return perilib.ParseStatus.IDLE
 
     @classmethod
-    def test_packet_complete(cls, buffer, new_byte, is_tx=False):
+    def test_packet_complete(cls, buffer, is_tx=False):
         # make sure we have at least up to the packet length field
-        temp_buffer = buffer + bytes([new_byte])
-        if len(temp_buffer) >= 7:
+        if len(buffer) >= 7:
             # check 11-bit "length" field in 4-byte header
-            (packet_length,) = struct.unpack("<H", temp_buffer[5:7])
-            if len(temp_buffer) == packet_length + 7:
-                (crc,) = struct.unpack("<H", temp_buffer[-2:])
+            (packet_length,) = struct.unpack("<H", buffer[5:7])
+            if len(buffer) == packet_length + 7:
+                (crc,) = struct.unpack("<H", buffer[-2:])
                 return perilib.ParseStatus.COMPLETE
 
         # not finished if we made it here
