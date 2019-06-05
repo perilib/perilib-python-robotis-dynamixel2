@@ -35,7 +35,7 @@ class ControlTable():
         return '\n'.join(lines)
         
     def populate_data_from_buffer(self, buffer):
-        self._data = perilib.protocol.Protocol.unpack_values(buffer, self.fields)
+        self._data = perilib.StreamProtocol.unpack_values(buffer, self.fields)
         
     def get_field_info(self, field_name):
         for field in self.fields:

@@ -61,11 +61,11 @@ class RobotisDynamixel2Servo():
         self.model_number = model_number
         self.firmware_version = firmware_version
         self.device = device
-        self.control_table = Servo.models[self.model_number]["control_table_class"]()
+        self.control_table = RobotisDynamixel2Servo.models[self.model_number]["control_table_class"]()
         
     def __str__(self):
         id_str = ("#%d" % self.id) if self.id is not None else "unidentified servo"
-        model_number_str = Servo.models[self.model_number]["name"] if self.model_number is not None else "unknown model"
+        model_number_str = RobotisDynamixel2Servo.models[self.model_number]["name"] if self.model_number is not None else "unknown model"
         firmware_version_str = self.firmware_version if self.firmware_version is not None else "-unknown"
         device_str = str(self.device) if self.device is not None else "unidentified device"
         return "%s (%s @ v%s) on %s" % (id_str, model_number_str, firmware_version_str, device_str)
@@ -81,7 +81,7 @@ class RobotisDynamixel2Servo():
         
     def update_value(self, field_name, value, broadcast=False):
         field = self.control_table.get_field_info(field_name)
-        data = perilib.protocol.Protocol.pack_values({field_name: value}, [field])
+        data = perilib.StreamProtocol.pack_values({field_name: value}, [field])
         use_id = self.id if not broadcast else 0xFE
         packet = self.device.stream.parser_generator.send_and_wait("inst_write", id=use_id, address=field["address"], data=data)
         

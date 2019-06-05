@@ -16,7 +16,7 @@ class RobotisDynamixel2Device(perilib.StreamDevice):
         if packet.name == "stat_ping":
             # add servo to internal list if not already present
             if packet.metadata["id"] not in self.servos:
-                self.servos[packet.metadata["id"]] = Servo(
+                self.servos[packet.metadata["id"]] = RobotisDynamixel2Servo(
                         id=packet.metadata["id"],
                         model_number=packet["model_number"],
                         firmware_version=packet["firmware_version"],
